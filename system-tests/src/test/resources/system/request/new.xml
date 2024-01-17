@@ -1,0 +1,4 @@
+<ProductValue>
+  <name>#(name)</name>
+  <articleId>#(articleId)</articleId>
+</ProductValue>

@@ -1,0 +1,35 @@
+@startuml
+
+[ProductUI] <<Single Page App>>
+
+package "Product" {
+  ProductService - [Product]
+}
+
+database "Postgres" as postgres1 {
+  [Products]
+}
+
+database "Postgres" as postgres2 {
+  [Stock]
+}
+
+queue stock
+
+queue level
+
+package "Inventory" {
+  InventoryService - [Inventory]
+}
+
+[ProductUI] --> ProductService
+
+[Product] --> [Products]
+[Product] --> [InventoryService]
+[Product] --> [stock]
+
+[Inventory] --> [Stock]
+[Inventory] <-- [stock]
+[Inventory] --> [level]
+
+@enduml

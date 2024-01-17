@@ -1,0 +1,21 @@
+@startuml
+
+package "Product" {
+  ProductService - [Product]
+}
+
+database "Postgres" as postgres {
+  [Products]
+}
+
+queue stock
+
+package "InventoryMock" {
+  InventoryService - [InventoryMock]
+}
+
+[Product] --> [Products]
+[Product] --> [InventoryService]
+[Product] --> [stock]
+
+@enduml

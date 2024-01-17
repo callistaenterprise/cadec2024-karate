@@ -1,0 +1,118 @@
+services:
+
+  activemq:
+    image: symptoma/activemq:latest
+    ports:
+      - 61616:61616
+      - 8161:8161
+    networks:
+      - workshop
+
+  postgres:
+    image: postgres:latest
+    ports:
+      - 5432:5432
+    restart: always
+    volumes:
+      - ./init-database.sql:/docker-entrypoint-initdb.d/init-database.sql
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: postgres
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U admin -d postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - workshop
+
+  reverse-proxy:
+    image: traefik:v2.10.7
+    container_name: "traefik"
+    command:
+      - "--api.insecure=true"
+      - "--api.dashboard=true"
+      - "--api.debug=true"
+      - "--providers.docker=true"
+      - "--log.LEVEL=DEBUG"
+      - "--entryPoints.websecure.address=:443"
+      - "--serverstransport.insecureskipverify=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.file.directory=/config/"
+      - "--providers.file.watch=true"
+    ports:
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - "./traefik:/config"
+      - "./target/dependency/ssl:/ssl"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    networks:
+      - workshop
+
+  inventory:
+    image: inventory:1.0.0
+    ports:
+      - 9443:9443
+    restart: always
+    volumes:
+      - ./target/dependency/ssl:/BOOT-INF/classes/ssl
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/inventory
+      SPRING_ACTIVEMQ_BROKER_URL: tcp://activemq:61616
+    networks:
+      - workshop
+
+  product:
+    image: product:1.0.0
+    ports:
+      - 8443:8443
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.product.rule=Host(`localhost`) && PathPrefix(`/products`)"
+      - "traefik.http.routers.product.entrypoints=websecure"
+      - "traefik.http.routers.product.tls=true"
+      - "traefik.http.services.product.loadBalancer.server.scheme=https"
+      - "traefik.http.services.product.loadbalancer.server.port=8443"
+    restart: always
+    volumes:
+      - ./target/dependency/ssl:/BOOT-INF/classes/ssl
+    environment:
+      SPRING_ACTIVEMQ_BROKER_URL: tcp://activemq:61616
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/product
+      INVENTORY_URL: https://host.docker.internal:9443/inventory/
+    depends_on:
+      - activemq
+      - postgres
+      - inventory
+    networks:
+      - workshop
+
+  product-ui:
+    container_name: product-ui
+    # The name of the image that will be created when building this container
+    image: product-ui:1.0.0
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.product-ui.rule=Host(`localhost`)"
+      - "traefik.http.routers.product-ui.entrypoints=websecure"
+      - "traefik.http.routers.product-ui.tls=true"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      - "traefik.http.routers.redirs.rule=hostregexp(`{host:.+}`)"
+      - "traefik.http.routers.redirs.entrypoints=web"
+      - "traefik.http.routers.redirs.middlewares=redirect-to-https"
+    user: "node"
+    environment:
+      - NODE_ENV=production
+      - TZ=Europe/Stockholm
+    restart: unless-stopped
+    ports:
+      - 3000:3000
+    networks:
+      - workshop
+
+networks:
+  workshop:
+    name: workshop
+    external: true

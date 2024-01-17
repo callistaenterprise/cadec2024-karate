@@ -1,0 +1,6 @@
+{
+    "productId": #number,
+    "name": #(name),
+    "articleId": #(articleId),
+    "inventory": #number
+}

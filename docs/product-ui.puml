@@ -1,0 +1,11 @@
+@startuml
+
+[ProductUI] <<Single Page App>>
+
+package "ProductMock" {
+  ProductService - [ProductMock]
+}
+
+[ProductUI] --> ProductService
+
+@enduml

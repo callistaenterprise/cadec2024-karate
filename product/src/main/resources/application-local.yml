@@ -1,0 +1,12 @@
+spring:
+  activemq:
+    broker-url: tcp://localhost:61616
+  datasource:
+    url: jdbc:postgresql://localhost:5432/product
+    username: admin
+    password: secret
+inventory:
+  url: https://localhost:9443/inventory/
+cors:
+  allowed-origins: http://localhost:3000
+  allowed-methods: OPTIONS,GET,HEAD,POST,PATCH,DELETE

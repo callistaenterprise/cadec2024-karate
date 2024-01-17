@@ -1,0 +1,19 @@
+@startuml
+
+database "Postgres" as postgres {
+  [Stock]
+}
+
+queue stock
+
+queue level
+
+package "Inventory" {
+  InventoryService - [Inventory]
+}
+
+[Inventory] --> [Stock]
+[Inventory] <-- [stock]
+[Inventory] --> [level]
+
+@enduml

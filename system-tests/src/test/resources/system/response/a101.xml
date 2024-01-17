@@ -1,0 +1,6 @@
+<ProductValue>
+  <productId>#regex [0-9]*</productId>
+  <name>Product 101</name>
+  <articleId>a101</articleId>
+  <inventory>1000</inventory>
+</ProductValue>
